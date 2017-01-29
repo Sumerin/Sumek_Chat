@@ -6,9 +6,11 @@
 #include <iostream>
 #include <string>
 
+
 using namespace std;
 
 typedef int32_t integer; // integer is 4 Bytes for Sure
+
 
 
 enum class Packet : integer // Type os pacekt to be send 4 Bytes also 
@@ -28,6 +30,8 @@ private:
 	SOCKET server;
 
 	bool Alive;
+
+	string ServerName = "SERVER:"; // temporary until i decide if it's constat or changable
 
 	
 	

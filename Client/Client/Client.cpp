@@ -24,26 +24,44 @@ bool Client::send_packet(Packet packetType, const char * data, integer size)
 	packetTypeBuffer = (Packet)htons((integer)packetType);
 	sizeBuffer = htons(size);
 
+	/*
+	 * package look like 
+	 *
+	 * [TP]+[SIZE]+[MESSAGE]
+	 *
+	 * TP- Type of packet in BIG ENDIAN (NETWORK BYTE ORDER)
+	 * 
+	 * SIZE - size of message also in NBO
+	 *
+	 * MESSAGE - Vector of CHAR  (no need to convert to NBO )
+	 */
+
+
 	switch (packetType)
 	{
 	case Packet::Sumek_ChatMessage:
 
+		if (size == 0)
+		{
+			return false; // if some press enter
+		}
 
-		while (sizeof(Packet)-sentedByte > 0)
+
+		while (sizeof(Packet)-sentedByte > 0) // TYPE PACKET
 		{
 			sentedByte += send(server, (char*)&packetTypeBuffer + sentedByte, sizeof(Packet)-sentedByte, NULL);
 		}
 
 		sentedByte = 0;
 
-		while (sizeof(integer)-sentedByte > 0)
+		while (sizeof(integer)-sentedByte > 0) // SIZE
 		{
 			sentedByte += send(server, (char*)&sizeBuffer + sentedByte, sizeof(integer)-sentedByte, NULL);
 		}
 
 		sentedByte = 0;
 
-		while (size - sentedByte > 0)
+		while (size - sentedByte > 0)// MESSAGE
 		{
 			sentedByte += send(server, data + sentedByte, size - sentedByte, NULL);
 		}
@@ -54,23 +72,23 @@ bool Client::send_packet(Packet packetType, const char * data, integer size)
 
 	case Packet::Sumek_Command:
 
-		sizeBuffer = htons(size - 1); // nie wysylamy '/' np. /me -> me
+		sizeBuffer = htons(size - 1); // don't send '/' example. /me -> me
 
-		while (sizeof(Packet)-sentedByte > 0)
+		while (sizeof(Packet)-sentedByte > 0)// TP
 		{
 			sentedByte += send(server, (char*)&packetTypeBuffer + sentedByte, sizeof(Packet)-sentedByte, NULL);
 		}
 
 		sentedByte = 0;
 
-		while (sizeof(integer)-sentedByte > 0)
+		while (sizeof(integer)-sentedByte > 0)// SIZE
 		{
 			sentedByte += send(server, (char*)&sizeBuffer + sentedByte, sizeof(integer)-sentedByte, NULL);
 		}
 
 		sentedByte = 0;
 
-		while (size - 1 - sentedByte > 0)
+		while (size - 1 - sentedByte > 0) // MESSAGE
 		{
 
 			sentedByte += send(server, data + 1 + sentedByte, size - 1 - sentedByte, NULL);
@@ -79,7 +97,7 @@ bool Client::send_packet(Packet packetType, const char * data, integer size)
 
 	case Packet::Sumek_Close:
 
-		while (sizeof(Packet)-sentedByte > 0)
+		while (sizeof(Packet)-sentedByte > 0) // JUST PACKET TYPE
 		{
 			sentedByte += send(server, (char*)&packetTypeBuffer + sentedByte, sizeof(Packet)-sentedByte, NULL);
 		}
@@ -177,17 +195,47 @@ void Client::clientRecvThread()
 		{
 			case Packet::Sumek_ChatMessage:
 			{
-				recv(server, (char*)&sizeBuffer, sizeof(integer), NULL);
+										recv(server, (char*)&sizeBuffer, sizeof(integer), NULL);
 
-				size = ntohs(sizeBuffer);
+										size = ntohs(sizeBuffer);
 
-				char *rBuffer = new char[size + 1];
-				recv(server, rBuffer, size, NULL);
-				rBuffer[size] = '\0';
-				cout << rBuffer << endl;
-				delete[] rBuffer;
-											}
+										char *rBuffer = new char[size + 1];
+
+										recv(server, rBuffer, size, NULL);
+
+										rBuffer[size] = '\0';
+
+										cout << rBuffer << endl;
+
+										delete[] rBuffer;
+			}
 			break;
+
+
+
+			case Packet::Sumek_Command:
+			{
+										  recv(server, (char*)&sizeBuffer, sizeof(integer), NULL);
+
+										  size = ntohs(sizeBuffer);
+
+										  integer temp = ServerName.size();
+
+										  char *rBuffer = new char[size + 1 + temp ];
+										  
+										  recv(server, rBuffer + temp, size, NULL);
+
+										  memcpy(rBuffer, ServerName.c_str(), temp);
+
+										  rBuffer[size  + temp] = '\0';
+
+
+										  cout << rBuffer << endl;
+										 
+
+										  delete[] rBuffer;
+			}
+				break;
 			default:
 				return;
 				break;

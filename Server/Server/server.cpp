@@ -5,32 +5,80 @@ bool WSAData_run = false; // be sure not to start wsData twice
 	bool Room::send_packet(Packet packetType, const char * data, integer size, const SOCKET dest)
 	{
 
+		integer sentedByte = 0;
+		integer sizeBuffer;
+		Packet packetTypeBuffer;
 
-	integer sizeBuffer;
-	Packet packetTypeBuffer;
+		sizeBuffer = htons(size);
+		packetTypeBuffer = (Packet)htons((integer)packetType);
 
-	sizeBuffer = htons(size);
-	packetTypeBuffer = (Packet)htons((integer)packetType);
+		switch (packetType)
+		{
+			case Packet::Sumek_ChatMessage:
+			{
+										  while (sizeof(Packet)-sentedByte > 0) //package Type
+										  {
+											  sentedByte += send(dest, (char*)&packetTypeBuffer + sentedByte, sizeof(Packet)-sentedByte, NULL);
+										  }
 
-	switch (packetType)
-	{
-	case Packet::Sumek_ChatMessage:
+										  sentedByte = 0;
 
-		send(dest, (char*)&packetTypeBuffer, sizeof(Packet), NULL);
-		send(dest, (char*)&sizeBuffer, sizeof(integer), NULL);
-		send(dest, data, size, NULL);
+										  while (sizeof(integer)-sentedByte > 0) // size of package
+										  {
+											  sentedByte += send(dest, (char*)&sizeBuffer + sentedByte, sizeof(integer)-sentedByte, NULL);
+										  }
+
+										  sentedByte = 0;
+
+										  while (size - sentedByte > 0) // the message
+										  {
+											  sentedByte += send(dest, data + sentedByte, size - sentedByte, NULL);
+										  }
+			}
+			break;
+
+
+
+			case Packet::Sumek_Command:
+
+				while (sizeof(Packet)-sentedByte > 0) // package type
+				{
+					sentedByte += send(dest, (char*)&packetTypeBuffer + sentedByte, sizeof(Packet)-sentedByte, NULL);
+				}
+
+				sentedByte = 0;
+
+				while (sizeof(integer)-sentedByte > 0) // size of answered message
+				{
+					sentedByte += send(dest, (char*)&sizeBuffer + sentedByte, sizeof(integer)-sentedByte, NULL);
+				}
+
+
+				sentedByte = 0;
+
+				while (size - sentedByte > 0) // the message
+				{
+					sentedByte += send(dest, data + sentedByte, size - sentedByte, NULL);
+				}
+			
+			break;
+
+		default:
+
 		break;
-	case Packet::Sumek_Command:
 
-		break;
+		}
 
-	default:
-		break;
-	}
+
+
 	return true;
 
 
 	}
+
+
+
+
 
 
 	void  start_thread(void * arg) // function used with create_thread to make new thread for another client
@@ -68,6 +116,10 @@ bool WSAData_run = false; // be sure not to start wsData twice
 		//TODO: thread obslugujacy wszystkie wiadomsci przychodzace do roomu 
 	}
 
+
+
+
+
 	void Room::join(SOCKET newConnetcion)
 	{
 
@@ -83,7 +135,7 @@ bool WSAData_run = false; // be sure not to start wsData twice
 
 		client[numberOfClient].Connection = newConnetcion;
 		client[numberOfClient].Alive = true;
-
+		
 		arg->dest = this;
 		arg->number = numberOfClient++;
 
@@ -91,6 +143,9 @@ bool WSAData_run = false; // be sure not to start wsData twice
 
 		CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)start_thread, (LPVOID)arg, NULL, NULL);
 	}
+
+
+
 
 
 	void Room::income_msg(integer num, pass_arg* relase)
@@ -106,6 +161,7 @@ bool WSAData_run = false; // be sure not to start wsData twice
 			Packet packetType;
 			Packet packetTypeBuffer;
 
+			nicknameSize = client[num].nickname.size();
 
 			iResult = recv(client[num].Connection, (char *)&packetTypeBuffer, sizeof(Packet), NULL);
 
@@ -122,12 +178,12 @@ bool WSAData_run = false; // be sure not to start wsData twice
 			{
 
 
-				case Packet::Sumek_ChatMessage:
+				case Packet::Sumek_ChatMessage: // reciveed message and pass it to others
 				{
 											  recv(client[num].Connection, (char *)&sizeBuffer, sizeof(integer), NULL);
 
 											  size = ntohs(sizeBuffer);
-											  nicknameSize = client[num].nickname.size();
+											  
 											  size += nicknameSize + 2;
 											  buffer = new char[size + 1];
 
@@ -155,19 +211,38 @@ bool WSAData_run = false; // be sure not to start wsData twice
 				break;
 
 
-				case Packet::Sumek_Command:
+				case Packet::Sumek_Command: //recived command and answear
 				{
-										 recv(client[num].Connection, (char *)&sizeBuffer, sizeof(integer), NULL);
 
-										  size = ntohs(sizeBuffer);
+											 integer code = 0;;
 
-										  buffer = new char[size];
+											 recv(client[num].Connection, (char *)&sizeBuffer, sizeof(integer), NULL);
 
-										  recv(client[num].Connection, buffer, size, NULL);
+											 size = ntohs(sizeBuffer);
+
+											 buffer = new char[size];
+
+											 recv(client[num].Connection, buffer, size, NULL);
+
+										  for (int i = 0; i < size; i++)
+										  {
+											  code += buffer[i]>'a' - 1 ? buffer[i] - ('a' - 'A') : buffer[i];    //  if it's lowercase convert to upper and add else just add 
+										  }
+
+												delete[] buffer;
 
 
+										  switch (code)
+										  {
+												
+											case ('M' + 'E') :
+											{
+																 send_packet(Packet::Sumek_Command,client[num].nickname.c_str(), nicknameSize , client[num].Connection);
+											}
+											break;
 
-										  delete[] buffer;
+										  }
+
 				}
 				break;
 

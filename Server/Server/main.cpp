@@ -1,7 +1,7 @@
 //SERVER
 
 #include "server.h"
-#define BROADCAST_ADDRESS "192.168.0.16"
+#define BROADCAST_ADDRESS "127.0.0.1"
 
 
 #define PORT 1111

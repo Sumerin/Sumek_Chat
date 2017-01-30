@@ -7,6 +7,7 @@ void startRecv(void *arg) // Create_thread and start reciving infromation from s
 {
 	Client * temp = (Client *)arg;
 	temp->clientRecvThread();
+	
 }
 
 #pragma endregion 
@@ -95,6 +96,7 @@ bool Client::send_packet(Packet packetType, const char * data, integer size)
 		}
 		break;
 
+		/* no need after i found out closesocket();
 	case Packet::Sumek_Close:
 
 		while (sizeof(Packet)-sentedByte > 0) // JUST PACKET TYPE
@@ -103,7 +105,7 @@ bool Client::send_packet(Packet packetType, const char * data, integer size)
 		}
 
 		break;
-
+		*/
 	default:
 		return false;
 	}
@@ -114,6 +116,20 @@ bool Client::send_packet(Packet packetType, const char * data, integer size)
 #pragma endregion
 
 #pragma region Public
+
+#pragma region Get
+bool Client::getAlive()
+{
+	return Alive;
+}
+
+#pragma endregion
+
+
+
+
+
+
 Client::Client(string server_address,integer port)
 {
 	
@@ -146,7 +162,7 @@ Client::~Client()
 {
 
 	Alive = false;
-	send_packet(Packet::Sumek_Close, nullptr, NULL);
+	//TODO : WAITING FOR RECV THREAD to closesocket()
 }
 
 
@@ -185,10 +201,10 @@ void Client::clientRecvThread()
 
 		packetType = (Packet)ntohs((integer)packetTypeBuffer);
 
-		if (iResult <= 0)
+		if (iResult < 0 || !Alive)
 		{
-			delete this;
-			return;
+			Alive = false;
+			packetType = Packet::Sumek_Close;
 		}
 
 		switch (packetType)
@@ -235,7 +251,19 @@ void Client::clientRecvThread()
 
 										  delete[] rBuffer;
 			}
-				break;
+			break;
+
+
+
+
+			case Packet::Sumek_Close:
+			{
+										cout << "DISSCONECTED FROM THE SERVER" << endl;
+										closesocket(server);
+			}
+			break;
+
+
 			default:
 				return;
 				break;
@@ -244,14 +272,14 @@ void Client::clientRecvThread()
 }
 
 
-void Client::clientSentMessage()
+void Client::clientSentMessage(string sBuffer)
 {
-	string sBuffer;
-	string bufferBuffera;
+	
+	
 	integer size;
 	
 
-	getline(cin, sBuffer);
+
 
 	size = sBuffer.size();
 

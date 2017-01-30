@@ -40,6 +40,11 @@ private:
 
 public:
 
+	bool getAlive();
+
+
+
+
 	Client(string server_address, integer port);
 	~Client();
 
@@ -49,13 +54,11 @@ public:
 
 
 
-	void close();
-
 
 
 	void clientRecvThread(); // start recv message from server on another thread
 
-	void clientSentMessage(); // sent message to the server
+	void clientSentMessage(string Text); // sent message to the server
 
 	
 

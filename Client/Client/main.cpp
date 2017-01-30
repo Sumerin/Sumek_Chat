@@ -24,18 +24,18 @@ int main()
 	
 	Client *A = new Client(SERVER_ADDRESS,PORT);
 
-	
+	string sBuffer;
 
-	while (A!=NULL)
+	while (A->getAlive())
 	{
-		A->clientSentMessage();
+		A->clientSentMessage(sBuffer);
+		getline(cin, sBuffer);
+		
 	}
 	
 
 	
 
-
-	delete A;
 	system("pause");
 	return 0;
 }

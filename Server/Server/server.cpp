@@ -167,7 +167,7 @@ bool WSAData_run = false; // be sure not to start wsData twice
 
 			packetType = (Packet)ntohs((integer)packetTypeBuffer);
 
-			if (iResult <= 0)
+			if (iResult < 0 || !client[num].Alive)
 			{
 				packetType = Packet::Sumek_Close;
 			}
@@ -220,28 +220,47 @@ bool WSAData_run = false; // be sure not to start wsData twice
 
 											 size = ntohs(sizeBuffer);
 
-											 buffer = new char[size];
+											 buffer = new char[size+1];
+											 buffer[size] = '\0';
 
 											 recv(client[num].Connection, buffer, size, NULL);
 
-										  for (int i = 0; i < size; i++)
+
+
+
+										  for (int i = 0; i < 2; i++) // 2 is the number of characters per command // !!! TODO: 10 + 8 = 9 + 9 BAD IDEA !!
 										  {
 											  code += buffer[i]>'a' - 1 ? buffer[i] - ('a' - 'A') : buffer[i];    //  if it's lowercase convert to upper and add else just add 
 										  }
 
-												delete[] buffer;
+
+
+
+												
+
+
+
 
 
 										  switch (code)
 										  {
 												
-											case ('M' + 'E') :
+											case ('M' + 'E') : // who am i?
 											{
 																 send_packet(Packet::Sumek_Command,client[num].nickname.c_str(), nicknameSize , client[num].Connection);
 											}
 											break;
 
+											case ('C' + 'H') : // Change my nickname
+											{
+																   client[num].nickname= string( buffer + 3);
+											}
+											break;
 										  }
+
+
+
+										  delete[] buffer;
 
 				}
 				break;
@@ -273,6 +292,8 @@ bool WSAData_run = false; // be sure not to start wsData twice
 											}
 
 											delete[] buffer;
+
+											closesocket(client[num].Connection);
 				}
 				break;
 			}

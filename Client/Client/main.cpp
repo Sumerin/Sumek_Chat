@@ -3,10 +3,8 @@
 
 #include "Client.h"
 
-
-
 #define PORT 1111
-#define SERVER_ADDRESS "127.0.0.1"
+
 
 
 using namespace std;
@@ -22,10 +20,20 @@ using namespace std;
 int main()
 {
 	
-	Client *A = new Client(SERVER_ADDRESS,PORT);
+	Client *A;
+	string ip;
 
 	string sBuffer;
 
+	do
+	{
+		cout << "IP: ";
+		getline(cin, ip);
+
+	} while (!ipPattern(ip));
+
+	cout << "what have i done" << endl;
+	A = new Client( ip, PORT);
 	while (A->getAlive())
 	{
 		A->clientSentMessage(sBuffer);
@@ -35,7 +43,7 @@ int main()
 	
 
 	
-
+	delete A;
 	system("pause");
 	return 0;
 }

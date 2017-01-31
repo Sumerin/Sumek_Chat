@@ -69,5 +69,11 @@ public:
 
 
 
+
+
+bool ipPattern(string);
+
+
+
 #endif
 

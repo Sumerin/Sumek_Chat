@@ -2,6 +2,74 @@
 
 bool WSAData_run = false;// be sure not to start wsData twice
 
+
+bool ipPattern(string IP)
+{
+	
+	integer counter = 0;
+
+
+
+
+
+	for (integer i = 0; i < 4; i++) // 4 BYTES
+	{
+
+
+		integer number = 0;
+		bool blank = true;
+
+		if ((unsigned)counter < IP.size()) // in case there is less then 4
+		{
+
+			while (IP[counter] >= '0' && IP[counter] <= '9')// convert char -> int
+			{
+
+				number *= 10;
+				number += IP[counter] - '0';
+
+				counter++;
+
+
+				blank = false; // to be sure if there is a number not just "10..0"
+			}
+
+			if (blank) // we don't want blank ip
+			{
+				return false;
+			}
+
+
+			if (IP[counter] != '.' && (unsigned)counter < IP.size()) // dot between Bytes if it isn't last one   
+			{
+
+				return false;
+			}
+
+
+			if (number > 255 || number < 0)// BYTE got value <255;0>
+			{
+				return false;
+			}
+
+
+				counter++; // next sign
+
+
+		}
+		else
+		{
+			return false;
+		}
+
+	}
+
+	return true;
+}
+
+
+
+
 #pragma region ThreadCreate
 void startRecv(void *arg) // Create_thread and start reciving infromation from serwer
 {
@@ -25,6 +93,13 @@ bool Client::send_packet(Packet packetType, const char * data, integer size)
 	packetTypeBuffer = (Packet)htons((integer)packetType);
 	sizeBuffer = htons(size);
 
+
+	if (size == 0)
+	{
+		return false; // if some press enter
+	}
+
+
 	/*
 	 * package look like 
 	 *
@@ -40,12 +115,11 @@ bool Client::send_packet(Packet packetType, const char * data, integer size)
 
 	switch (packetType)
 	{
+
+
 	case Packet::Sumek_ChatMessage:
 
-		if (size == 0)
-		{
-			return false; // if some press enter
-		}
+		
 
 
 		while (sizeof(Packet)-sentedByte > 0) // TYPE PACKET

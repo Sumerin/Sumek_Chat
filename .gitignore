@@ -5,6 +5,8 @@
 *.sln
 *.vcxproj
 *.vcxproj.filters
+cmake-build-debug/
+CMakeLists.txt
 
 
 # User-specific files

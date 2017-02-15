@@ -44,6 +44,6 @@ int main()
 
 	
 	delete A;
-	system("pause");
+
 	return 0;
 }

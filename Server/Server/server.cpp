@@ -1,6 +1,5 @@
 #include "server.h"
 
-bool WSAData_run = false; // be sure not to start wsData twice
 
 	bool Room::send_packet(Packet packetType, const char * data, integer size, const SOCKET dest)
 	{
@@ -81,40 +80,16 @@ bool WSAData_run = false; // be sure not to start wsData twice
 
 
 
-	void  start_thread(void * arg) // function used with create_thread to make new thread for another client
-	{
-		pass_arg *temp = (pass_arg*)arg;
-		temp->dest->income_msg(temp->number, temp);
-	}
+
 
 
 	Room::Room(integer number)
 	{
-		start_WSADATA();
+
 		RoomIndex = number;
 	}
 
-	void Room::start_WSADATA()
-	{
-		if (WSAData_run == false)
-		{
 
-			WSADATA wsaData;
-			WORD dllVersion = MAKEWORD(2, 1);
-
-			if (WSAStartup(dllVersion, &wsaData) != 0)
-			{
-				MessageBoxA(NULL, "Startup Failed", "Sumer_chat_Error", MB_OK | MB_ICONERROR);
-				exit(1);
-			}
-		}
-		WSAData_run = true;
-	}
-
-	void start()
-	{
-		//TODO: thread obslugujacy wszystkie wiadomsci przychodzace do roomu 
-	}
 
 
 
@@ -124,7 +99,7 @@ bool WSAData_run = false; // be sure not to start wsData twice
 	{
 
 		integer size = MOTD.size();
-		pass_arg *arg = new pass_arg();
+
 
 		if (numberOfClient == MAX_SIZE)
 		{
@@ -135,22 +110,23 @@ bool WSAData_run = false; // be sure not to start wsData twice
 
 		client[numberOfClient].Connection = newConnetcion;
 		client[numberOfClient].Alive = true;
-		
-		arg->dest = this;
-		arg->number = numberOfClient++;
+
 
 		send_packet(Packet::Sumek_ChatMessage, MOTD.c_str(), size, newConnetcion);
 
-		CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)start_thread, (LPVOID)arg, NULL, NULL);
+		if(!fork())
+		{
+			income_msg(numberOfClient++);
+		}
 	}
 
 
 
 
 
-	void Room::income_msg(integer num, pass_arg* relase)
+	void Room::income_msg(integer num)
 	{
-		delete relase;
+
 		int iResult = 1;
 		while (client[num].Alive)
 		{
@@ -167,7 +143,7 @@ bool WSAData_run = false; // be sure not to start wsData twice
 
 			packetType = (Packet)ntohs((integer)packetTypeBuffer);
 
-			if (iResult < 0 || !client[num].Alive)
+			if (iResult <= 0 || !client[num].Alive)
 			{
 				packetType = Packet::Sumek_Close;
 			}
@@ -293,7 +269,7 @@ bool WSAData_run = false; // be sure not to start wsData twice
 
 											delete[] buffer;
 
-											closesocket(client[num].Connection);
+											close(client[num].Connection);
 				}
 				break;
 			}

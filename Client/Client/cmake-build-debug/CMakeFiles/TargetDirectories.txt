@@ -1,0 +1,3 @@
+/home/sumerin/workspace/Sumek_Chat/Client/Client/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/sumerin/workspace/Sumek_Chat/Client/Client/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/sumerin/workspace/Sumek_Chat/Client/Client/cmake-build-debug/CMakeFiles/Client.dir

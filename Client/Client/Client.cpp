@@ -1,6 +1,5 @@
 #include "Client.h"
 
-bool WSAData_run = false;// be sure not to start wsData twice
 
 
 bool ipPattern(string IP)
@@ -70,15 +69,6 @@ bool ipPattern(string IP)
 
 
 
-#pragma region ThreadCreate
-void startRecv(void *arg) // Create_thread and start reciving infromation from serwer
-{
-	Client * temp = (Client *)arg;
-	temp->clientRecvThread();
-	
-}
-
-#pragma endregion 
 
 
 #pragma region Private 
@@ -117,7 +107,7 @@ bool Client::send_packet(Packet packetType, const char * data, integer size)
 	{
 
 
-	case Packet::Sumek_ChatMessage:
+	case Packet(Sumek_ChatMessage) :
 
 		
 
@@ -145,7 +135,7 @@ bool Client::send_packet(Packet packetType, const char * data, integer size)
 
 
 
-	case Packet::Sumek_Command:
+	case Packet(Sumek_Command):
 
 		sizeBuffer = htons(size - 1); // don't send '/' example. /me -> me
 
@@ -170,16 +160,7 @@ bool Client::send_packet(Packet packetType, const char * data, integer size)
 		}
 		break;
 
-		/* no need after i found out closesocket();
-	case Packet::Sumek_Close:
 
-		while (sizeof(Packet)-sentedByte > 0) // JUST PACKET TYPE
-		{
-			sentedByte += send(server, (char*)&packetTypeBuffer + sentedByte, sizeof(Packet)-sentedByte, NULL);
-		}
-
-		break;
-		*/
 	default:
 		return false;
 	}
@@ -192,6 +173,8 @@ bool Client::send_packet(Packet packetType, const char * data, integer size)
 #pragma region Public
 
 #pragma region Get
+
+
 bool Client::getAlive()
 {
 	return Alive;
@@ -207,12 +190,16 @@ bool Client::getAlive()
 Client::Client(string server_address,integer port)
 {
 	
-	start_WSADATA();
+
+	ServerName = "SERVER:";
 	
 
-	SOCKADDR_IN addr;
+	sockaddr_in addr;
 	integer addrlen = sizeof(addr);
-	addr.sin_addr.s_addr = inet_addr(server_address.c_str());
+	inet_aton(server_address.c_str(), &addr.sin_addr);
+
+	// out of date addr.sin_addr.s_addr = inet_addr(server_address.c_str());
+
 	addr.sin_port = htons(port);
 	addr.sin_family = AF_INET;
 
@@ -220,14 +207,20 @@ Client::Client(string server_address,integer port)
 
 	server = socket(AF_INET, SOCK_STREAM, NULL);
 
-	if (connect(server, (SOCKADDR*)&addr, addrlen) != 0)
+	bool isConnected = connect(server, (sockaddr*)&addr, addrlen);
+
+
+	if ( isConnected)
 	{
-		MessageBoxA(NULL, "Failed to connect", "Sumek_Chat_ERROR", MB_OK || MB_ICONERROR);
+
 		exit(0);
 	}
 
 	Alive = true;
-	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)startRecv, (LPVOID) this, NULL, NULL);
+	if(!fork())
+    {
+        clientRecvThread();
+    }
 	
 
 }
@@ -241,23 +234,6 @@ Client::~Client()
 
 
 
-void Client::start_WSADATA()
-{
-	if (WSAData_run == false)
-	{
-
-		WSADATA wsaData;
-		WORD dllVersion = MAKEWORD(2, 1);
-
-		if (WSAStartup(dllVersion, &wsaData) != 0)
-		{
-			MessageBoxA(NULL, "Startup Failed", "Sumer_chat_Error", MB_OK | MB_ICONERROR);
-			exit(1);
-		}
-	}
-	WSAData_run = true;
-}
-	
 
 
 void Client::clientRecvThread()
@@ -275,15 +251,16 @@ void Client::clientRecvThread()
 
 		packetType = (Packet)ntohs((integer)packetTypeBuffer);
 
-		if (iResult < 0 || !Alive)
+		if (iResult <= 0 || !Alive)
 		{
+            cout<< "ZAMKNIETE";
 			Alive = false;
-			packetType = Packet::Sumek_Close;
+			packetType = Sumek_Close;
 		}
 
 		switch (packetType)
 		{
-			case Packet::Sumek_ChatMessage:
+			case Packet(Sumek_ChatMessage):
 			{
 										recv(server, (char*)&sizeBuffer, sizeof(integer), NULL);
 
@@ -303,7 +280,7 @@ void Client::clientRecvThread()
 
 
 
-			case Packet::Sumek_Command:
+			case Packet(Sumek_Command):
 			{
 										  recv(server, (char*)&sizeBuffer, sizeof(integer), NULL);
 
@@ -330,10 +307,10 @@ void Client::clientRecvThread()
 
 
 
-			case Packet::Sumek_Close:
+			case Packet(Sumek_Close):
 			{
 										cout << "DISSCONECTED FROM THE SERVER" << endl;
-										closesocket(server);
+										close(server);
 			}
 			break;
 
@@ -361,12 +338,12 @@ void Client::clientSentMessage(string sBuffer)
 	{
 
 	case '/':
-		this->send_packet(Packet::Sumek_Command, sBuffer.c_str(), size);
+		this->send_packet(Packet(Sumek_Command), sBuffer.c_str(), size);
 		break;
 
 
 	default:
-		this->send_packet(Packet::Sumek_ChatMessage, sBuffer.c_str(), size);
+		this->send_packet(Packet(Sumek_ChatMessage), sBuffer.c_str(), size);
 		break;
 	}
 	

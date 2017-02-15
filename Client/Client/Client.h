@@ -1,10 +1,20 @@
 #ifndef CLIENT_H
 #define CLIENT_H
-#pragma comment(lib,"ws2_32.lib")
-#include <WinSock2.h>
-#include <cstdint>
+
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+
+typedef int SOCKET ;
+
+#include <unistd.h>
+#include <stdlib.h>
+
 #include <iostream>
-#include <string>
+#include <string.h>
 
 
 using namespace std;
@@ -13,7 +23,7 @@ typedef int32_t integer; // integer is 4 Bytes for Sure
 
 
 
-enum class Packet : integer // Type os pacekt to be send 4 Bytes also 
+enum  Packet  // Type os pacekt to be send 4 Bytes also
 {
 	Sumek_ChatMessage,
 	Sumek_Command,
@@ -31,7 +41,7 @@ private:
 
 	bool Alive;
 
-	string ServerName = "SERVER:"; // temporary until i decide if it's constat or changable
+	string ServerName ; // temporary until i decide if it's constat or changable
 
 	
 	
@@ -50,7 +60,6 @@ public:
 
 
 
-	static void start_WSADATA(); // windows winsock
 
 
 

@@ -1,10 +1,21 @@
 #ifndef SERVER_H
 #define SERVER_H
-#pragma comment(lib,"ws2_32.lib")
-#include <WinSock2.h>
+
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+
+typedef int SOCKET ;
+
+#include <unistd.h>
+#include <stdlib.h>
+
 #include <iostream>
-#include <cstdint>
-#include <string>
+
+#include <string.h>
 
 #define MAX_SIZE 10 // max user number per ROOM
 
@@ -12,7 +23,7 @@ typedef int32_t integer; // make sure to have integer on 4 Bytes
 
 using namespace std; // for String and cout
 
-enum class Packet : integer // typ of packet to send integer =>4 Bytes
+enum  Packet  // typ of packet to send integer =>4 Bytes
 {
 	Sumek_ChatMessage,
 	Sumek_Command,
@@ -29,10 +40,7 @@ struct member{ // to storage the data about the other side
 
 
 
-struct pass_arg{ // just passing arguments for thread
-	Room *dest;
-	integer number;
-};
+
 
 
 
@@ -60,16 +68,14 @@ private:
 public:
 	Room(integer number);
 
-	static void start_WSADATA();// Winsock on windows
 
 
-	void start();// useless
 
 	void join(SOCKET newConnetcion); // join client to current Room
 	
 
 
-	void income_msg(integer num, pass_arg* relase); // start_thread use it. income message service for user number = num
+	void income_msg(integer num); // start_thread use it. income message service for user number = num
 	
 };
 

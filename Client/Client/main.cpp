@@ -21,19 +21,19 @@ int main()
 {
 	
 	Client *A;
-	string ip;
+	string IP;
 
 	string sBuffer;
 
 	do
 	{
 		cout << "IP: ";
-		getline(cin, ip);
+		getline(cin, IP);
 
-	} while (!ipPattern(ip));
+	} while (!ipPattern(IP));
 
 	cout << "what have i done" << endl;
-	A = new Client( ip, PORT);
+	A = new Client( IP, PORT);
 	while (A->getAlive())
 	{
 		A->clientSentMessage(sBuffer);

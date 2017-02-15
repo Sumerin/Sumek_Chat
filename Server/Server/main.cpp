@@ -37,7 +37,7 @@ int main()
 
 	SOCKADDR_IN my_addr; // address socketu do obslugi kolejki polaczen
 	integer addrlen = sizeof(my_addr);
-	my_addr.sin_addr.s_addr = inet_addr(BROADCAST_ADDRESS);
+	my_addr.sin_addr.s_addr = inet_addr(BROADCAST_ADDRESS);// inet_pton
 	my_addr.sin_port = htons(PORT);// port
 	my_addr.sin_family = AF_INET;//ipv4
 

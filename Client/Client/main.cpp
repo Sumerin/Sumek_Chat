@@ -12,11 +12,6 @@ using namespace std;
 
 
 
-
-
-
-
-
 int main()
 {
 	
@@ -32,18 +27,18 @@ int main()
 
 	} while (!ipPattern(ip));
 
-	cout << "what have i done" << endl;
 	A = new Client( ip, PORT);
-	while (A->getAlive())
+
+	while (true)
 	{
-		A->clientSentMessage(sBuffer);
+		A -> clientSentMessage(sBuffer);
 		getline(cin, sBuffer);
 		
 	}
 	
 
 	
-	delete A;
+	//delete A;
 
 	return 0;
 }

@@ -21,6 +21,8 @@ netdb.h
 -
 arpa/inet.h
 -
+errno.h
+-
 unistd.h
 -
 stdlib.h

@@ -8,4 +8,7 @@ set(SOURCE_FILES
         server.cpp
         server.h)
 
+find_package (Threads)
+
 add_executable(Server ${SOURCE_FILES})
+target_link_libraries (Server ${CMAKE_THREAD_LIBS_INIT})

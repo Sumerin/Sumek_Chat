@@ -25,6 +25,8 @@ netdb.h
 -
 arpa/inet.h
 -
+pthread.h
+-
 unistd.h
 -
 stdlib.h

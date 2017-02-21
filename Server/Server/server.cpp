@@ -8,8 +8,8 @@
 		integer sizeBuffer;
 		Packet packetTypeBuffer;
 
-		sizeBuffer = htons(size);
-		packetTypeBuffer = (Packet)htons((integer)packetType);
+		sizeBuffer        =     htons(size);
+		packetTypeBuffer  =     (Packet)htons((integer)packetType);
 
 		switch (packetType)
 		{
@@ -76,7 +76,13 @@
 	}
 
 
+    void * start_thread(void * arg) // function used with create_thread to make new thread for another client
+    {
+        pass_arg *temp  =  (pass_arg*)arg;
 
+        temp->dest->income_msg(temp->number, temp);
+
+    }
 
 
 
@@ -85,7 +91,6 @@
 
 	Room::Room(integer number)
 	{
-
 		RoomIndex = number;
 	}
 
@@ -98,50 +103,78 @@
 	void Room::join(SOCKET newConnetcion)
 	{
 
-		integer size = MOTD.size();
+		integer size    =   MOTD.size();
 
 
-		if (numberOfClient == MAX_SIZE)
+		if (numberOfClient == MAX_SIZE)//TODO : fix it
 		{
 			size = Reject_1.size();
+
 			send_packet(Packet::Sumek_ChatMessage, Reject_1.c_str(), size, newConnetcion);
+
 			return;
 		}
 
-		client[numberOfClient].Connection = newConnetcion;
-		client[numberOfClient].Alive = true;
+		client[numberOfClient].Connection   =   newConnetcion;
+		client[numberOfClient].Alive        =   true;
 
+
+
+
+        pass_arg    *temp   =   new pass_arg();
+
+        temp->number =   numberOfClient++;
+        temp->dest   =   this;
 
 		send_packet(Packet::Sumek_ChatMessage, MOTD.c_str(), size, newConnetcion);
 
-		if(!fork())
-		{
-			income_msg(numberOfClient++);
-		}
+        pthread_t temp_thread;
+
+        integer err  =  pthread_create(&temp_thread, NULL, &start_thread, temp);
+
+        if (err != 0)
+        {
+
+            cout<< "can't create thread :" << strerror(err) << endl;
+            check_errno(-1);
+
+        }
+        else
+        {
+
+            cout<< "Thread created successfully" << endl;
+        }
 	}
 
 
 
 
 
-	void Room::income_msg(integer num)
+	void Room::income_msg(integer num, pass_arg *temp)
 	{
+        delete  temp;
 
-		int iResult = 1;
+		integer iResult;
+        char    *buffer;
+        integer sizeBuffer;
+        integer size;
+        integer allsize;
+        integer nicknameSize;
+        Packet  packetType;
+        Packet  packetTypeBuffer;
+        integer code ;
+
 		while (client[num].Alive)
 		{
-			char *buffer;
-			integer sizeBuffer;
-			integer size;
-			integer nicknameSize;
-			Packet packetType;
-			Packet packetTypeBuffer;
 
-			nicknameSize = client[num].nickname.size();
 
-			iResult = recv(client[num].Connection, (char *)&packetTypeBuffer, sizeof(Packet), NULL);
+			nicknameSize  =  client[num].nickname.size();
 
-			packetType = (Packet)ntohs((integer)packetTypeBuffer);
+			iResult       =  recv(client[num].Connection, (char *)&packetTypeBuffer, sizeof(Packet), NULL);
+
+			packetType    =  (Packet)ntohs((integer)packetTypeBuffer);
+
+
 
 			if (iResult <= 0 || !client[num].Alive)
 			{
@@ -158,18 +191,21 @@
 				{
 											  recv(client[num].Connection, (char *)&sizeBuffer, sizeof(integer), NULL);
 
-											  size = ntohs(sizeBuffer);
+											  size   =   ntohs(sizeBuffer);
 											  
-											  size += nicknameSize + 2;
-											  buffer = new char[size + 1];
+											  allsize   =  size + nicknameSize + 2;
+											  buffer =   new char[size + 1];
 
-											  memcpy(buffer, client[num].nickname.c_str(), nicknameSize);
+											  memcpy(buffer, client[num].nickname.c_str(), nicknameSize); // copy nickname to buf
 
-											  buffer[nicknameSize] = ':';
-											  buffer[nicknameSize + 1] = ' ';
+											  buffer[nicknameSize]      = ':';
+											  buffer[nicknameSize + 1]  = ' ';
+                                              buffer[allsize]           = '\0';
 
 											  recv(client[num].Connection, buffer + nicknameSize + 2, size, NULL);
-											  buffer[size] = '\0';
+
+
+
 											  cout << num << ": " << buffer << std::endl;
 
 											  for (int i = numberOfClient - 1; i >= 0; i--)
@@ -179,7 +215,9 @@
 													  continue;
 												  }
 
-												  send_packet(Packet::Sumek_ChatMessage, buffer, size, client[i].Connection);
+												  send_packet(Packet::Sumek_ChatMessage, buffer, allsize, client[i].Connection);
+
+                                                  cout << i << " wyslano " << buffer << std::endl;
 											  }
 
 											  delete buffer;
@@ -190,13 +228,13 @@
 				case Packet::Sumek_Command: //recived command and answear
 				{
 
-											 integer code = 0;;
+											 code = 0;
 
 											 recv(client[num].Connection, (char *)&sizeBuffer, sizeof(integer), NULL);
 
 											 size = ntohs(sizeBuffer);
 
-											 buffer = new char[size+1];
+											 buffer       =  new char[size+1];
 											 buffer[size] = '\0';
 
 											 recv(client[num].Connection, buffer, size, NULL);
@@ -229,7 +267,7 @@
 
 											case ('C' + 'H') : // Change my nickname
 											{
-																   client[num].nickname= string( buffer + 3);
+                                                                 client[num].nickname= string( buffer + 3);
 											}
 											break;
 										  }
@@ -244,17 +282,16 @@
 
 				case Packet::Sumek_Close:
 				{
-											client[num].Alive = false;
-											nicknameSize = client[num].nickname.size();
-											size = nicknameSize + sizeof(": Disconected!!");
-											buffer = new char[size + 1];
-
-											memcpy(buffer, client[num].nickname.c_str(), nicknameSize);
-											memcpy(buffer + nicknameSize, ": Disconected!!", sizeof(": Disconected!!"));
-
+											client[num].Alive   =   false;
+											size                =   nicknameSize + sizeof(": Disconected!!");
+											buffer              =   new char[size + 1];
+                                            buffer[size] = '\0';
+											memcpy(buffer, client[num].nickname.c_str(), nicknameSize);                   // copy nickname to buffer
+											memcpy(buffer + nicknameSize, ": Disconected!!", sizeof(": Disconected!!"));  // copy text to buffer
 
 
-											buffer[size] = '\0';
+
+
 											cout << num << ": " << buffer << std::endl;
 
 											for (int i = numberOfClient - 1; i >= 0; i--)
@@ -270,6 +307,8 @@
 											delete[] buffer;
 
 											close(client[num].Connection);
+
+                                            pthread_exit(0);
 				}
 				break;
 			}
@@ -278,7 +317,15 @@
 	}
 
 
+void check_errno(integer err)       // checking errno and switching off server
+{
+    if(err == -1)
+    {
+        cout<< " error occures: "<< strerror(errno)<< endl;
+        exit(1);
+    }
 
+}
 
 
 

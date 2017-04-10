@@ -82,6 +82,14 @@ void startRecv(void *arg) // Create_thread and start reciving infromation from s
 
 
 #pragma region Private 
+bool Client::command_Service(const char *data, integer size)
+{
+	this->send_packet(Packet::Sumek_Command, data, size);
+
+
+	return true;
+}
+
 
 bool Client::send_packet(Packet packetType, const char * data, integer size)
 {
@@ -361,7 +369,8 @@ void Client::clientSentMessage(string sBuffer)
 	{
 
 	case '/':
-		this->send_packet(Packet::Sumek_Command, sBuffer.c_str(), size);
+
+		this->command_Service(sBuffer.c_str(), size);
 		break;
 
 

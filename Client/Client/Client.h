@@ -34,7 +34,7 @@ private:
 	string ServerName = "SERVER:"; // temporary until i decide if it's constat or changable
 
 	
-	
+	bool command_Service(const char * data, integer size);
 	
 	bool send_packet(Packet packetType, const char * data, integer size);
 

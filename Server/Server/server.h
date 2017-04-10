@@ -5,12 +5,16 @@
 #include <iostream>
 #include <cstdint>
 #include <string>
+#include <mutex>
 
 #define MAX_SIZE 10 // max user number per ROOM
 
 typedef int32_t integer; // make sure to have integer on 4 Bytes
 
-using namespace std; // for String and cout
+using  std::cout;
+using  std::string;
+using  std::mutex;
+using  std::lock_guard;
 
 enum class Packet : integer // typ of packet to send integer =>4 Bytes
 {
@@ -47,7 +51,7 @@ private:
 	integer RoomIndex; // invidual room number currently not in use
 
 	member client[MAX_SIZE];// stored information
-
+	mutex client_mutex[MAX_SIZE];
 
 	integer numberOfClient = 0; // counter of used slot
 
@@ -59,7 +63,7 @@ private:
 
 public:
 	Room(integer number);
-
+	~Room();
 	static void start_WSADATA();// Winsock on windows
 
 

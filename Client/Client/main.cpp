@@ -32,7 +32,6 @@ int main()
 
 	} while (!ipPattern(IP));
 
-	cout << "what have i done" << endl;
 	A = new Client( IP, PORT);
 	while (A->getAlive())
 	{

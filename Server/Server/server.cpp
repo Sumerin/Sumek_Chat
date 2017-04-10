@@ -93,6 +93,11 @@ bool WSAData_run = false; // be sure not to start wsData twice
 		start_WSADATA();
 		RoomIndex = number;
 	}
+	Room::~Room()
+	{
+		WSACleanup();
+	}
+
 
 	void Room::start_WSADATA()
 	{
@@ -136,10 +141,12 @@ bool WSAData_run = false; // be sure not to start wsData twice
 		client[numberOfClient].Connection = newConnetcion;
 		client[numberOfClient].Alive = true;
 		
+		send_packet(Packet::Sumek_ChatMessage, MOTD.c_str(), size, newConnetcion);
+
 		arg->dest = this;
 		arg->number = numberOfClient++;
 
-		send_packet(Packet::Sumek_ChatMessage, MOTD.c_str(), size, newConnetcion);
+		
 
 		CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)start_thread, (LPVOID)arg, NULL, NULL);
 	}
@@ -202,8 +209,9 @@ bool WSAData_run = false; // be sure not to start wsData twice
 												  {
 													  continue;
 												  }
-
+												  client_mutex[i].lock();
 												  send_packet(Packet::Sumek_ChatMessage, buffer, size, client[i].Connection);
+												  client_mutex[i].unlock();
 											  }
 
 											  delete buffer;
